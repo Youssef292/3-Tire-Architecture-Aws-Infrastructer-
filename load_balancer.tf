@@ -1,60 +1,66 @@
-# main.tf
+resource "aws_lb" "jenkins_alb" {
+  name               = "jenkins-alb"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.alb_sg.id]
+  subnets            = public_subnets 
 
-provider "aws" {
-  region = var.aws_region 
-}
-
-# Data source for Ubuntu AMI
-data "aws_ami" "ubuntu" {
-  most_recent = true
-  owners      = ["099720109477"] # Canonical
-
-  filter {
-    name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"]
+  tags = {
+    Environment = "production"
   }
 }
 
-# Modules
-module "vpc" {
-  source      = "./modules/vpc"
-  cidr_block  = "10.0.0.0/16" # Hardcoded
-  public_subnet_cidr_blocks  = ["10.0.1.0/24", "10.0.2.0/24"] # Hardcoded
-  private_subnet_cidr_blocks = ["10.0.11.0/24", "10.0.12.0/24"] # Hardcoded
+resource "aws_lb_target_group" "jenkins_tg" {
+  name        = "jenkins-tg"
+  port        = 8080
+  protocol    = "HTTP"
+  vpc_id      = vpc_id 
+  target_type = "instance"
+
+  health_check {
+    path = "/"  
+  }
 }
 
-module "security_groups" {
-  source = "./modules/security_groups"
-  vpc_id = module.vpc.vpc_id
-  jenkins_allowed_cidr_blocks = var.jenkins_allowed_cidr_blocks
+resource "aws_lb_listener" "jenkins_listener" {
+  load_balancer_arn = aws_lb.jenkins_alb.arn
+  port              = 80
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.jenkins_tg.arn
+  }
 }
 
-module "instances" {
-  source             = "./modules/instances"
-  ami                = data.aws_ami.ubuntu.id
-  public_subnets     = module.vpc.public_subnets
-  private_subnets    = module.vpc.private_subnets
-  security_group_ids = module.security_groups.security_group_ids
-  instance_type     = var.instance_type
-  jenkins_instances = 3 # Hardcoded
-  backend_instances = 2 # Hardcoded
-  database_instances= 2 # Hardcoded
+resource "aws_lb_target_group_attachment" "jenkins" {
+  count            = length(jenkins_instances_count) 
+  target_group_arn = aws_lb_target_group.jenkins_tg.arn
+  target_id        = jenkins_instances_count[count.index].id 
+  port             = 8080
 }
 
-module "load_balancer" {
-  source      = "./modules/load_balancer"
-  vpc_id      = module.vpc.vpc_id
-  public_subnets = module.vpc.public_subnets
-  jenkins_instances = module.instances.jenkins_instances
-  jenkins_security_group_id = module.security_groups.security_group_ids.jenkins
+resource "aws_security_group" "alb_sg" {
+  name        = "alb_sg"
+  description = "Allow inbound HTTP"
+  vpc_id      = vpc_id
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 }
 
 # Outputs
-output "jenkins_public_ips" {
-  value = module.instances.jenkins.*.public_ip # You might want to remove this output if you're primarily using the load balancer
+output "alb_dns_name" {
+  value = aws_lb.jenkins_alb.dns_name
 }
-
-output "load_balancer_dns_name" {
-  value = module.load_balancer.alb_dns_name
-}
-
