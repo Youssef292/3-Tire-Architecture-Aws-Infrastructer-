@@ -1,6 +1,6 @@
 # EC2 Instances
 resource "aws_instance" "frontend" {
-  count         = 3 
+  count         = 2
   ami           = "ami-0ebfd941bbafe70c6"
   instance_type = var.instance_type 
   subnet_id     = count.index < 2 ? var.public_subnets[0] : var.public_subnets[1] 
