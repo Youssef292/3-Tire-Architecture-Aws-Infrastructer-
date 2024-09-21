@@ -44,15 +44,3 @@ resource "aws_instance" "database" {
   }
 }
 
-# Outputs
-output "jenkins_public_ips" {
-  value = aws_instance.jenkins.*.public_ip
-}
-
-output "jenkins_instances" {
-  value = aws_instance.jenkins[*]
-}
-
-output "jenkins_instances" {
-  value = aws_instance.jenkins.*.id
-}
