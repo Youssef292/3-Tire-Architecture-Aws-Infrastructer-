@@ -51,3 +51,13 @@ variable "jenkins_allowed_cidr_blocks" {
   type        = list(string)
   default     = ["0.0.0.0/0"] 
 }
+
+variable "vpc_id" {
+  description = "vpc-0fcb65aa0219c24be"
+  type        = string
+}
+
+variable "public_subnets" {
+  description = "List of IDs of the public subnets"
+  type        = list(string) # Since it's a list of subnet IDs
+}
