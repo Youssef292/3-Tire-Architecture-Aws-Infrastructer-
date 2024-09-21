@@ -1,6 +1,5 @@
 # 3-Tire-Architecture-Aws-Infrastructer-
 
-# 3-Tire-Architecture-Aws-Infrastructer-
 ## README: Terraform Configuration for EC2 Instances
 
 ### Overview
