@@ -39,7 +39,25 @@ module "instances" {
   database_instances= var.database_instances
 }
 
+
+module "load_balancer" {
+  source      = "./modules/load_balancer"
+  vpc_id      = module.vpc.vpc_id
+  public_subnets = module.vpc.public_subnets
+  jenkins_instances = module.instances.jenkins_instances
+  jenkins_security_group_id = module.security_groups.security_group_ids.jenkins
+}
+
 # Outputs
+output "jenkins_public_ips" {
+  value = module.instances.jenkins.*.public_ip # You might want to remove this output if you're primarily using the load balancer
+}
+
+output "load_balancer_dns_name" {
+  value = module.load_balancer.alb_dns_name
+}
+
+
 output "jenkins_public_ips" {
   value = module.instances.jenkins_public_ips
 }
