@@ -44,3 +44,14 @@ resource "aws_instance" "database" {
   }
 }
 
+resource "aws_instance" "ansible" {
+  ami           = "ami-0ebfd941bbafe70c6"
+  instance_type = var.instance_type
+  subnet_id     = var.public_subnets[0]  
+  security_groups = [var.security_group_ids.ansible]
+
+  tags = {
+    Name = "Ansible"
+  }
+}
+
