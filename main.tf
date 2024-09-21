@@ -1,5 +1,7 @@
 provider "aws" {
   region = var.aws_region 
+  access_key      = "AKIARZ5BMOH2OEFKLQM2"
+  secret_key      = "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"
 }
 
 # Data source for Ubuntu AMI
